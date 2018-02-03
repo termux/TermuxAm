@@ -1,0 +1,4 @@
+#!/data/data/com.termux/files/usr/bin/bash
+export CLASSPATH=/data/data/com.termux/files/usr/libexec/termux-am/am.apk
+unset LD_LIBRARY_PATH
+exec /system/bin/app_process / com.example.termuxam.Am "$@"

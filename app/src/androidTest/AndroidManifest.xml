@@ -1,0 +1,13 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.termuxam.test">
+
+    <application
+        android:label="TermuxAmTests"
+        android:supportsRtl="true">
+
+        <receiver android:name=".TestReceiver" android:exported="true" />
+        <service android:name=".TestComponentsService" android:exported="true" />
+        <activity android:name=".TestActivity" android:exported="true" />
+        <service android:name=".TestService" android:exported="true" />
+    </application>
+</manifest>
