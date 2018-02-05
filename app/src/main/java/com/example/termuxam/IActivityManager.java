@@ -97,6 +97,19 @@ class IActivityManager {
                             boolean.class, "requireForeground", false,
                             String.class, "callingPackage", callingAppName,
                             int.class, "userId", 0
+                    ).tryMethodVariantInexact(
+                            "startService",
+                            "android.app.IApplicationThread", "caller", null,
+                            Intent.class, "service", null,
+                            String.class, "resolvedType", null,
+                            String.class, "callingPackage", callingAppName,
+                            int.class, "userId", 0
+                    ).tryMethodVariantInexact( // Pre frameworks/base 99b6043
+                            "startService",
+                            "android.app.IApplicationThread", "caller", null,
+                            Intent.class, "service", null,
+                            String.class, "resolvedType", null,
+                            int.class, "userId", 0
                     );
             mStopServiceMethod =
                     new CrossVersionReflectedMethod(amClass)
@@ -133,6 +146,13 @@ class IActivityManager {
                             "android.content.IIntentReceiver", "finishedReceiver", null,
                             String.class, "requiredPermission", null,
                             Bundle.class, "options", null
+                    ).tryMethodVariantInexact( // Pre frameworks/base a750a63
+                            "send",
+                            int.class, "code", 0,
+                            Intent.class, "intent", null,
+                            String.class, "resolvedType", null,
+                            "android.content.IIntentReceiver", "finishedReceiver", null,
+                            String.class, "requiredPermission", null
                     );
 
 

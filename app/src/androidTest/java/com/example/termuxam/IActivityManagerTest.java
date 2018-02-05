@@ -79,7 +79,7 @@ public class IActivityManagerTest {
             if (field.getType() == CrossVersionReflectedMethod.class) {
                 field.setAccessible(true);
                 CrossVersionReflectedMethod method = (CrossVersionReflectedMethod) field.get(mAm);
-                assertTrue(method.isFound());
+                assertTrue(field.getName(), method.isFound());
             }
         }
     }
