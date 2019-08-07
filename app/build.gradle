@@ -5,7 +5,12 @@ android {
     defaultConfig {
         applicationId "com.example.termuxam"
         minSdkVersion 21
-        targetSdkVersion 28
+        // Note: targetSdkVersion affects only tests,
+        //       normally, even though this is packaged as apk,
+        //       it's not loaded as apk so targetSdkVersion is ignored.
+        //       targetSdkVersion this must be < 28 because this application accesses hidden apis
+        //noinspection OldTargetApi
+        targetSdkVersion 27
         versionCode 1
         versionName "0.1"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -21,5 +26,5 @@ android {
 dependencies {
     //implementation fileTree(dir: 'libs', include: ['*.jar'])
     //testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:1.0.1'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
 }
