@@ -179,6 +179,9 @@ public class IntentCmd {
                     // The escape character must be escaped for the string and
                     // again for the regex, thus four escape characters become one.
                     String[] strings = value.split("(?<!\\\\),");
+                    for (int i = 0; i < strings.length; i++) {
+                        strings[i] = strings[i].replaceAll("\\\\,",",");
+                    }
                     intent.putExtra(key, strings);
                     hasIntentInfo = true;
                 }
@@ -192,7 +195,7 @@ public class IntentCmd {
                     String[] strings = value.split("(?<!\\\\),");
                     ArrayList<String> list = new ArrayList<>(strings.length);
                     for (int i = 0; i < strings.length; i++) {
-                        list.add(strings[i]);
+                        list.add(strings[i].replaceAll("\\\\,",","));
                     }
                     intent.putExtra(key, list);
                     hasIntentInfo = true;
