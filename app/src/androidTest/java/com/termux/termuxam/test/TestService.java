@@ -1,11 +1,11 @@
-package com.example.termuxam.test;
+package com.termux.termuxam.test;
 
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 
-import com.example.termuxam.IActivityManagerTest;
+import com.termux.termuxam.IActivityManagerTest;
 
 /**
  * {@link Service} used in {@link IActivityManagerTest#testStartStopService()}

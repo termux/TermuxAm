@@ -1,4 +1,4 @@
-package com.example.termuxam;
+package com.termux.termuxam;
 
 import android.content.Intent;
 

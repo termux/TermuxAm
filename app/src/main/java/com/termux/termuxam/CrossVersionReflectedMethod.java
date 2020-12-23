@@ -1,4 +1,4 @@
-package com.example.termuxam;
+package com.termux.termuxam;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

@@ -1,4 +1,4 @@
-package com.example.termuxam;
+package com.termux.termuxam;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -11,10 +11,10 @@ import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 import android.util.Log;
 
-import com.example.termuxam.test.TestActivity;
-import com.example.termuxam.test.TestComponentsService;
-import com.example.termuxam.test.TestReceiver;
-import com.example.termuxam.test.TestService;
+import com.termux.termuxam.test.TestActivity;
+import com.termux.termuxam.test.TestComponentsService;
+import com.termux.termuxam.test.TestReceiver;
+import com.termux.termuxam.test.TestService;
 
 import org.junit.After;
 import org.junit.Before;
@@ -43,7 +43,7 @@ public class IActivityManagerTest {
         mAm = new IActivityManager(InstrumentationRegistry.getTargetContext().getPackageName());
 
         // Generate Intent action for use in tests
-        mAction = "com.example.termuxam.test.TEST_INTENT_" + Math.random();
+        mAction = "com.termux.termuxam.test.TEST_INTENT_" + Math.random();
 
         // Connect to test components service
         final CountDownLatch serviceConnectedLatch = new CountDownLatch(1);

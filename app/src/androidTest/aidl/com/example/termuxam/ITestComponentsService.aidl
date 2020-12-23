@@ -1,5 +1,5 @@
 // ITestComponentsService.aidl
-package com.example.termuxam;
+package com.termux.termuxam;
 
 // Declare any non-default types here with import statements
 

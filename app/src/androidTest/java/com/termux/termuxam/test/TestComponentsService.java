@@ -1,4 +1,4 @@
-package com.example.termuxam.test;
+package com.termux.termuxam.test;
 
 import android.app.Service;
 import android.content.Intent;
@@ -6,7 +6,7 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.annotation.Nullable;
 
-import com.example.termuxam.ITestComponentsService;
+import com.termux.termuxam.ITestComponentsService;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

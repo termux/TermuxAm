@@ -1,10 +1,10 @@
-package com.example.termuxam.test;
+package com.termux.termuxam.test;
 
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 
-import com.example.termuxam.IActivityManagerTest;
+import com.termux.termuxam.IActivityManagerTest;
 
 /**
  * {@link Activity} used for {@link IActivityManagerTest#testStartActivity()}

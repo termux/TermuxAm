@@ -14,5 +14,5 @@ is for development, using TermuxAm apk that is installed as app in Android,
 allowing installation of Java part from Android Studio
 
 # Running tests/debugging
-Tests checking IActivityManager wrapper class are in `app/src/androidTest/java/com/example/termuxam/IActivityManagerTest.java`
+Tests checking IActivityManager wrapper class are in `app/src/androidTest/java/com.termux/termuxam/IActivityManagerTest.java`
 and are runnable/debuggable from Android Studio

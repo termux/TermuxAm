@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.termuxam.test">
+    package="com.termux.termuxam.test">
 
     <application
         android:label="TermuxAmTests"

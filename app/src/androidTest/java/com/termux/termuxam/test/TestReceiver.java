@@ -1,10 +1,10 @@
-package com.example.termuxam.test;
+package com.termux.termuxam.test;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import com.example.termuxam.IActivityManagerTest;
+import com.termux.termuxam.IActivityManagerTest;
 
 /**
  * {@link BroadcastReceiver} used in {@link IActivityManagerTest#testBroadcastIntent()}

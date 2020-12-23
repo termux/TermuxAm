@@ -1,4 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/sh
-export CLASSPATH=$(pm path com.example.termuxam|cut -d: -f2)
+export CLASSPATH=$(pm path com.termux.termuxam|cut -d: -f2)
 unset LD_LIBRARY_PATH LD_PRELOAD
-exec /system/bin/app_process / com.example.termuxam.Am "$@"
+exec /system/bin/app_process / com.termux.termuxam.Am "$@"
