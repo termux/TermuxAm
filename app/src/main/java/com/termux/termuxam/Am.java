@@ -22,6 +22,7 @@ import android.app.ActivityOptions;
 import android.content.ComponentName;
 import android.content.IIntentReceiver;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.AndroidException;
@@ -71,7 +72,14 @@ public class Am extends BaseCommand {
      * @param args The command-line arguments
      */
     public static void main(String[] args) {
-        (new Am()).run(args);
+        Integer exitCode = new Am().run(args);
+        // If command finished, then exit with exit code, otherwise let command waiting thread to call exit itself.
+        if (exitCode != null)
+            System.exit(parseExitCode(exitCode));
+    }
+
+    public static int parseExitCode(int exitCode) {
+        return exitCode < 0 || exitCode > 255 ? 1 : exitCode;
     }
 
     @Override
@@ -333,7 +341,7 @@ public class Am extends BaseCommand {
     }
 
     @Override
-    public void onRun() throws Exception {
+    public Integer onRun() throws Exception {
 
         mAm = new IActivityManager();
         if (mAm == null) {
@@ -350,11 +358,11 @@ public class Am extends BaseCommand {
         String op = nextArgRequired();
 
         if (op.equals("start")) {
-            runStart();
+            return runStart();
         } else if (op.equals("startservice")) {
-            runStartService();
+            return runStartService();
         } else if (op.equals("stopservice")) {
-            runStopService();
+            return runStopService();
         /*
         } else if (op.equals("force-stop")) {
             runForceStop();
@@ -368,7 +376,7 @@ public class Am extends BaseCommand {
             runTraceIpc();
         */
         } else if (op.equals("broadcast")) {
-            sendBroadcast();
+            return sendBroadcast();
         /*
         } else if (op.equals("profile")) {
             runProfile();
@@ -398,12 +406,12 @@ public class Am extends BaseCommand {
             runPackageImportance();
         */
         } else if (op.equals("to-uri")) {
-            runToUri(0);
+            return runToUri(0);
         } else if (op.equals("to-intent-uri")) {
-            runToUri(Intent.URI_INTENT_SCHEME);
+            return runToUri(Intent.URI_INTENT_SCHEME);
         } else if (op.equals("to-app-uri")) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
-                runToUri(Intent.URI_ANDROID_APP_SCHEME);
+                return runToUri(Intent.URI_ANDROID_APP_SCHEME);
             } else {
                 throw new UnsupportedOperationException("Creating app uri not supported on Android < 5.1");
             }
@@ -435,6 +443,7 @@ public class Am extends BaseCommand {
         */
         } else {
             showError("Error: unknown command '" + op + "'");
+            return 1;
         }
     }
 
@@ -516,7 +525,7 @@ public class Am extends BaseCommand {
         });
     }
 
-    private void runStartService() throws Exception {
+    private int runStartService() throws Exception {
         Intent intent = makeIntent();
         /*
         if (mUserId == UserHandle.USER_ALL) {
@@ -529,14 +538,19 @@ public class Am extends BaseCommand {
                 /*SHELL_PACKAGE_NAME,*/ mUserId);
         if (cn == null) {
             System.err.println("Error: Not found; no service started.");
+            return 2;
         } else if (cn.getPackageName().equals("!")) {
             System.err.println("Error: Requires permission " + cn.getClassName());
+            return 1;
         } else if (cn.getPackageName().equals("!!")) {
             System.err.println("Error: " + cn.getClassName());
+            return 1;
         }
+
+        return 0;
     }
 
-    private void runStopService() throws Exception {
+    private int runStopService() throws Exception {
         Intent intent = makeIntent();
         /*
         if (mUserId == UserHandle.USER_ALL) {
@@ -548,14 +562,19 @@ public class Am extends BaseCommand {
         int result = mAm.stopService(/*null,*/ intent, intent.getType(), mUserId);
         if (result == 0) {
             System.err.println("Service not stopped: was not running.");
+            return 2;
         } else if (result == 1) {
             System.err.println("Service stopped");
+            return 0;
         } else if (result == -1) {
             System.err.println("Error stopping service");
+            return 1;
         }
+
+        return 0;
     }
 
-    private void runStart() throws Exception {
+    private int runStart() throws Exception {
         Intent intent = makeIntent();
         /*
         if (mUserId == UserHandle.USER_ALL) {
@@ -569,7 +588,8 @@ public class Am extends BaseCommand {
             mimeType = mAm.getProviderMimeType(intent.getData(), mUserId);
         }
 
-
+        int res, exitCode;
+        boolean launched;
         do {
             /*
             if (mStopOption) {
@@ -620,7 +640,6 @@ public class Am extends BaseCommand {
 
             IActivityManager.WaitResult result = null;
             */
-            int res;
             final long startTime = SystemClock.uptimeMillis();
             ActivityOptions options = null;
             /*
@@ -644,19 +663,23 @@ public class Am extends BaseCommand {
             */
             final long endTime = SystemClock.uptimeMillis();
             PrintStream out = mWaitOption ? System.out : System.err;
-            boolean launched = false;
+            launched = false;
+            exitCode = 1;
             switch (res) {
                 case ActivityManager.START_SUCCESS:
                     launched = true;
+                    exitCode = 0;
                     break;
                 case ActivityManager.START_SWITCHES_CANCELED:
                     launched = true;
+                    exitCode = 0;
                     out.println(
                             "Warning: Activity not started because the "
                             + " current activity is being kept for the user.");
                     break;
                 case ActivityManager.START_DELIVERED_TO_TOP:
                     launched = true;
+                    exitCode = 0;
                     out.println(
                             "Warning: Activity not started, intent has "
                             + "been delivered to currently running "
@@ -664,12 +687,14 @@ public class Am extends BaseCommand {
                     break;
                 case ActivityManager.START_RETURN_INTENT_TO_CALLER:
                     launched = true;
+                    exitCode = 0;
                     out.println(
                             "Warning: Activity not started because intent "
                             + "should be handled by the caller");
                     break;
                 case ActivityManager.START_TASK_TO_FRONT:
                     launched = true;
+                    exitCode = 0;
                     out.println(
                             "Warning: Activity not started, its current "
                             + "task has been brought to the front");
@@ -680,6 +705,7 @@ public class Am extends BaseCommand {
                             + "resolve " + intent.toString());
                     break;
                 case ActivityManager.START_CLASS_NOT_FOUND:
+                    exitCode = 2;
                     out.println(NO_CLASS_ERROR_CODE);
                     out.println("Error: Activity class " +
                             intent.getComponent().toShortString()
@@ -737,6 +763,8 @@ public class Am extends BaseCommand {
             }
             */
         } while (mRepeat > 1);
+
+        return exitCode;
     }
 
     /*
@@ -775,7 +803,7 @@ public class Am extends BaseCommand {
     }
     */
 
-    private void sendBroadcast() throws Exception {
+    private Integer sendBroadcast() throws Exception {
         Intent intent = makeIntent();
         IntentReceiver receiver = new IntentReceiver();
         String[] requiredPermissions = mReceiverPermission == null ? null
@@ -784,6 +812,8 @@ public class Am extends BaseCommand {
         mAm.broadcastIntent(/*null,*/ intent, /*null,*/ receiver, /*0, null, null,*/ requiredPermissions,
                 /*android.app.AppOpsManager.OP_NONE, null,*/ true, false, mUserId);
         receiver.waitForFinish();
+
+        return null; // Do not exit in main()
     }
 
     /*
@@ -1651,13 +1681,15 @@ public class Am extends BaseCommand {
         }
     }*/
 
-    private void runToUri(int flags) throws Exception {
+    private int runToUri(int flags) throws Exception {
         Intent intent = makeIntent();
         System.out.println(intent.toUri(flags));
+        return 0;
     }
 
     private class IntentReceiver extends IIntentReceiver.Stub {
         private boolean mFinished = false;
+        private int exitCode = 1;
 
         @Override
         public void performReceive(Intent intent, int resultCode, String data, Bundle extras,
@@ -1668,6 +1700,7 @@ public class Am extends BaseCommand {
             System.out.println(line);
             synchronized (this) {
               mFinished = true;
+              exitCode = resultCode;
               notifyAll();
             }
         }
@@ -1675,6 +1708,9 @@ public class Am extends BaseCommand {
         public synchronized void waitForFinish() {
             try {
                 while (!mFinished) wait();
+
+                // Will be 0 for `ActivityManager.BROADCAST_SUCCESS`, otherwise 1
+                System.exit(parseExitCode(exitCode));
             } catch (InterruptedException e) {
                 throw new IllegalStateException(e);
             }

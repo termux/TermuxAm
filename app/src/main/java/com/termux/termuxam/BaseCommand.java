@@ -34,23 +34,24 @@ public abstract class BaseCommand {
     /**
      * Call to run the command.
      */
-    public void run(String[] args) {
+    public Integer run(String[] args) {
         if (args.length < 1) {
             onShowUsage(System.out);
-            return;
+            return 0;
         }
 
         mArgs.init(args, 0);
 
         try {
-            onRun();
+            return onRun();
         } catch (IllegalArgumentException e) {
             onShowUsage(System.err);
             System.err.println();
             System.err.println("Error: " + e.getMessage());
+            return 1;
         } catch (Exception e) {
             e.printStackTrace(System.err);
-            System.exit(1);
+            return 1;
         }
     }
 
@@ -74,7 +75,7 @@ public abstract class BaseCommand {
     /**
      * Implement the command.
      */
-    public abstract void onRun() throws Exception;
+    public abstract Integer onRun() throws Exception;
 
     /**
      * Print help text for the command.
