@@ -1,6 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/sh
 
 AM_APK_PATH="@TERMUX_PREFIX@/libexec/termux-am/am.apk"
+
+# If apk file is writable and current effective user is not root (0),
+# system (1000) and shell (2000), then remove write bit from apk
+# permissions for current used for Android >= 14 since it will trigger
+# the `SecurityException: Writable dex file '/path/to/am.apk' is not allowed.`
+# exception in logcat by SystemClassLoader and cause a SIGABRT for the
+# app_process.
+# - https://github.com/termux/termux-packages/issues/16255
+# - https://developer.android.com/about/versions/14/behavior-changes-14#safer-dynamic-code-loading
+# - https://cs.android.com/android/_/android/platform/art/+/03ac3eb0fc36be97f301ac60e85e1bb7ca52fa12
+# - https://cs.android.com/android/_/android/platform/art/+/d3a8a9e960d533f39b6bafc785599eae838a6351
+# - https://cs.android.com/android/_/android/platform/art/+/03ac3eb0fc36be97f301ac60e85e1bb7ca52fa12:runtime/native/dalvik_system_DexFile.cc;l=335
+if [ -w "$AM_APK_PATH" ]; then
+    user="$(id -u)"
+    if [ "$user" != "0" ] && [ "$user" != "1000" ] && [ "$user" != "2000" ]; then
+        chmod 0400 "$AM_APK_PATH" || exit $?
+    fi
+fi
+
 export CLASSPATH="$AM_APK_PATH"
 unset LD_LIBRARY_PATH LD_PRELOAD
 exec /system/bin/app_process -Xnoimage-dex2oat / com.termux.termuxam.Am "$@"
