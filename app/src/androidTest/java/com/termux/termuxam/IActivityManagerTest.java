@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.IIntentReceiver;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 
@@ -95,6 +96,11 @@ public class IActivityManagerTest {
 
     @Test
     public void testBroadcastIntent() throws Exception {
+        // Do not run on Android `>= 14` since it will trigger the
+        // `Sending broadcast <action> with resultTo requires resultToApp` exception in logcat by
+        // ActivityManagerService and will hang the test forever
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU) return;
+
         final CountDownLatch latch = new CountDownLatch(1);
         final Intent[] outIntent = new Intent[1];
         final String[] outData = new String[1];
