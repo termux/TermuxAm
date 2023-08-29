@@ -402,7 +402,11 @@ public class Am extends BaseCommand {
         } else if (op.equals("to-intent-uri")) {
             runToUri(Intent.URI_INTENT_SCHEME);
         } else if (op.equals("to-app-uri")) {
-            runToUri(Intent.URI_ANDROID_APP_SCHEME);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+                runToUri(Intent.URI_ANDROID_APP_SCHEME);
+            } else {
+                throw new UnsupportedOperationException("Creating app uri not supported on Android < 5.1");
+            }
         /*
         } else if (op.equals("switch-user")) {
             runSwitchUser();
