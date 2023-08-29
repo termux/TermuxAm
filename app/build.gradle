@@ -10,7 +10,7 @@ android {
         //       normally, even though this is packaged as apk,
         //       it's not loaded as apk so targetSdkVersion is ignored.
         //       targetSdkVersion this must be < 28 because this application accesses hidden apis
-        //noinspection OldTargetApi
+        //noinspection ExpiredTargetSdkVersion,OldTargetApi
         targetSdkVersion 27
         versionCode 1
         versionName "0.1"
