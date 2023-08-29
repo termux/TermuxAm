@@ -2,7 +2,8 @@ package com.termux.termuxam.test;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
+
+import androidx.annotation.Nullable;
 
 import com.termux.termuxam.IActivityManagerTest;
 
