@@ -18,6 +18,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.lsposed.hiddenapibypass.HiddenApiBypass;
 
 import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
@@ -42,6 +43,12 @@ public class IActivityManagerTest {
 
     @Before
     public void setUp() throws Exception {
+        try {
+            HiddenApiBypass.addHiddenApiExemptions("");
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
+
         mAm = new IActivityManager(InstrumentationRegistry.getTargetContext().getPackageName(), true);
 
         // Generate Intent action for use in tests
