@@ -33,6 +33,8 @@ import java.net.URISyntaxException;
 
 public class Am extends BaseCommand {
 
+    public static final String LOG_TAG = "TermuxAm";
+
     /*
     private static final String SHELL_PACKAGE_NAME = "com.android.shell";
 
@@ -58,6 +60,7 @@ public class Am extends BaseCommand {
     private int mRepeat = 0;
     private int mUserId;
     private String mReceiverPermission;
+    private boolean mCheckDrawOverAppsPermissions = false;
 
     /*
     private String mProfileFile;
@@ -89,8 +92,10 @@ public class Am extends BaseCommand {
                 "usage: am [subcommand] [options]\n" +
                 "usage: am start [-D] [-N] [-W] [-P <FILE>] [--start-profiler <FILE>]\n" +
                 "               [--sampling INTERVAL] [-R COUNT] [-S]\n" +
-                "               [--track-allocation] [--user <USER_ID> | current] <INTENT>\n" +
-                "       am startservice [--user <USER_ID> | current] <INTENT>\n" +
+                "               [--track-allocation] [--user <USER_ID> | current]\n" +
+                "               [--check-draw-over-apps-permission] <INTENT>\n" +
+                "       am startservice [--user <USER_ID> | current]\n" +
+                "                       [--check-draw-over-apps-permission] <INTENT>\n" +
                 "       am stopservice [--user <USER_ID> | current] <INTENT>\n" +
                 /*
                 "       am force-stop [--user <USER_ID> | all | current] <PACKAGE>\n" +
@@ -165,11 +170,26 @@ public class Am extends BaseCommand {
                 "    --track-allocation: enable tracking of object allocations\n" +
                 "    --user <USER_ID> | current: Specify which user to run as; if not\n" +
                 "        specified then run as the current user.\n" +
+                "    --check-draw-over-apps-permission: Check if calling package has\n" +
+                "        Draw over other apps permission before starting activity since" +
+                "        starting activities from background may fail on Android >= 10.\n" +
+                "        https://developer.android.com/guide/components/activities/background-starts\n" +
                 "    --stack <STACK_ID>: Specify into which stack should the activity be put." +
+                // - https://cs.android.com/android/platform/superproject/+/android-13.0.0_r74:frameworks/base/services/core/java/com/android/server/wm/BackgroundActivityStartController.java;l=331;bpv=0
+                // - https://cs.android.com/android/_/android/platform/frameworks/base/+/8596dedf188b2a6637bc4ad89abd19643f3c6c99
+                // - https://cs.android.com/android/_/android/platform/frameworks/base/+/1548684f7bcd813a40bae45b58607b024b9f5d33
+                // - https://cs.android.com/android/_/android/platform/frameworks/base/+/7b97a0267b61485e808da6b1edf904ae653c2541
+                // - https://cs.android.com/android/_/android/platform/frameworks/base/+/d016285dd1a368f7eec532fb82c01dcee0c4bcf1
                 "\n" +
                 "am startservice: start a Service.  Options are:\n" +
                 "    --user <USER_ID> | current: Specify which user to run as; if not\n" +
                 "        specified then run as the current user.\n" +
+                "    --check-draw-over-apps-permission: Check if calling package has\n" +
+                "        Draw over other apps permission before starting service since" +
+                "        starting foreground services from background may fail if targeting Android >= 12.\n" +
+                "        https://developer.android.com/guide/components/foreground-services#background-start-restrictions\n" +
+                // - https://cs.android.com/android/_/android/platform/frameworks/base/+/20f42909f8186639bcc9dba77791171e3966be88
+                // - https://cs.android.com/android/_/android/platform/frameworks/base/+/6706c1acc0eb1e8b30721940fe39b572edc225c2
                 "\n" +
                 "am stopservice: stop a Service.  Options are:\n" +
                 "    --user <USER_ID> | current: Specify which user to run as; if not\n" +
@@ -474,9 +494,11 @@ public class Am extends BaseCommand {
         mAutoStop = false;
         */
         mUserId = defUser;
+        mCheckDrawOverAppsPermissions = false;
         /*
         mStackId = INVALID_STACK_ID;
         */
+
 
         return IntentCmd.parseCommandArgs(mArgs, new IntentCmd.CommandOptionHandler() {
             @Override
@@ -513,6 +535,8 @@ public class Am extends BaseCommand {
                     mUserId = parseUserArg(nextArgRequired());
                 } else if (opt.equals("--receiver-permission")) {
                     mReceiverPermission = nextArgRequired();
+                } else if (opt.equals("--check-draw-over-apps-permission")) {
+                    mCheckDrawOverAppsPermissions = true;
                 } else if (opt.equals("--stack")) {
                     /*
                     mStackId = Integer.parseInt(nextArgRequired());
@@ -533,6 +557,13 @@ public class Am extends BaseCommand {
             return;
         }
         */
+
+        if (mCheckDrawOverAppsPermissions &&
+                !PermissionUtils.validateDisplayOverOtherAppsPermissionForPostAndroid10(false, true)) {
+            System.err.println("Error: " + PermissionUtils.getMissingDisplayOverOtherAppsPermissionError());
+            return 1;
+        }
+
         System.out.println("Starting service: " + intent);
         ComponentName cn = mAm.startService(/*null,*/ intent, intent.getType(),
                 /*SHELL_PACKAGE_NAME,*/ mUserId);
@@ -615,6 +646,12 @@ public class Am extends BaseCommand {
                 Thread.sleep(250);
             }
             */
+
+            if (mCheckDrawOverAppsPermissions &&
+                    !PermissionUtils.validateDisplayOverOtherAppsPermissionForPostAndroid10(false, true)) {
+                System.err.println("Error: " + PermissionUtils.getMissingDisplayOverOtherAppsPermissionError());
+                return 1;
+            }
 
             System.out.println("Starting: " + intent);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
