@@ -42,7 +42,7 @@ public class IActivityManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        mAm = new IActivityManager(InstrumentationRegistry.getTargetContext().getPackageName());
+        mAm = new IActivityManager(InstrumentationRegistry.getTargetContext().getPackageName(), true);
 
         // Generate Intent action for use in tests
         mAction = "com.termux.termuxam.test.TEST_INTENT_" + Math.random();

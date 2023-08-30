@@ -18,21 +18,22 @@ import java.lang.reflect.InvocationTargetException;
 class IActivityManager {
 
     private Object mAm;
-    private CrossVersionReflectedMethod mGetProviderMimeType;
-    private CrossVersionReflectedMethod mStartActivity;
-    /*
-    private CrossVersionReflectedMethod mBroadcastIntent;
-    */
+    private final String mCallingAppPackage;
+    private CrossVersionReflectedMethod mGetProviderMimeTypeMethod;
+    private CrossVersionReflectedMethod mStartActivityAsUserMethod;
+    //private CrossVersionReflectedMethod mBroadcastIntentMethod;
     private CrossVersionReflectedMethod mStartServiceMethod;
     private CrossVersionReflectedMethod mStopServiceMethod;
     private CrossVersionReflectedMethod mGetIntentSenderMethod;
     private CrossVersionReflectedMethod mIntentSenderSendMethod;
 
     IActivityManager() throws Exception {
-        this(FakeContext.PACKAGE_NAME);
+        this(FakeContext.PACKAGE_NAME, false);
     }
 
-    IActivityManager(String callingAppName) throws Exception {
+    IActivityManager(String callingAppPackage, boolean setupMethods) throws Exception {
+        mCallingAppPackage = callingAppPackage;
+
         try {
             try {
                 mAm = android.app.ActivityManager.class
@@ -43,20 +44,47 @@ class IActivityManager {
                         .getMethod("getDefault")
                         .invoke(null);
             }
-            Class<?> amClass = mAm.getClass();
-            mGetProviderMimeType =
-                    new CrossVersionReflectedMethod(amClass)
-                            .tryMethodVariantInexact(
-                                    "getProviderMimeType",
-                                    Uri.class, "uri",
-                                    int.class, "userId"
-                            );
-            mStartActivity =
-                    new CrossVersionReflectedMethod(amClass)
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        if (setupMethods) {
+            getGetProviderMimeTypeMethod();
+            getStartActivityAsUserMethod();
+            //getBroadcastIntentMethod();
+            getStartServiceMethod();
+            getStopServiceMethod();
+            getGetIntentSenderMethod();
+            getIntentSenderSendMethod();
+        }
+    }
+
+    private CrossVersionReflectedMethod getGetProviderMimeTypeMethod() {
+        if (mGetProviderMimeTypeMethod != null) return mGetProviderMimeTypeMethod;
+
+        try {
+            mGetProviderMimeTypeMethod = new CrossVersionReflectedMethod(mAm.getClass())
+                    .tryMethodVariantInexact(
+                            "getProviderMimeType",
+                            Uri.class, "uri",
+                            int.class, "userId"
+                    );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return mGetProviderMimeTypeMethod;
+    }
+
+    private CrossVersionReflectedMethod getStartActivityAsUserMethod() {
+        if (mStartActivityAsUserMethod != null) return mStartActivityAsUserMethod;
+
+        try {
+            mStartActivityAsUserMethod = new CrossVersionReflectedMethod(mAm.getClass())
                     .tryMethodVariantInexact(
                             "startActivityAsUser",
-                            "android.app.IApplicationThread",  "caller", null,
-                            String.class, "callingPackage", callingAppName,
+                            "android.app.IApplicationThread", "caller", null,
+                            String.class, "callingPackage", mCallingAppPackage,
                             Intent.class, "intent", null,
                             String.class, "resolvedType", null,
                             IBinder.class, "resultTo", null,
@@ -67,9 +95,19 @@ class IActivityManager {
                             Bundle.class, "options", null,
                             int.class, "userId", 0
                     );
-            /*
-            mBroadcastIntent =
-                    new CrossVersionReflectedMethod(amClass)
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return mStartActivityAsUserMethod;
+    }
+
+    /*
+    private CrossVersionReflectedMethod getBroadcastIntentMethod() {
+        if (mBroadcastIntentMethod != null) return mBroadcastIntentMethod;
+
+        try {
+            mBroadcastIntentMethod = new CrossVersionReflectedMethod(mAm.getClass())
                     .tryMethodVariantInexact(
                             "broadcastIntent",
                             "android.app.IApplicationThread", "caller", null,
@@ -86,23 +124,33 @@ class IActivityManager {
                             boolean.class, "sticky", false,
                             int.class, "userId", 0
                     );
-            */
-            mStartServiceMethod =
-                    new CrossVersionReflectedMethod(amClass)
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return mBroadcastIntentMethod;
+    }
+    */
+
+    private CrossVersionReflectedMethod getStartServiceMethod() {
+        if (mStartServiceMethod != null) return mStartServiceMethod;
+
+        try {
+            mStartServiceMethod = new CrossVersionReflectedMethod(mAm.getClass())
                     .tryMethodVariantInexact(
                             "startService",
                             "android.app.IApplicationThread", "caller", null,
                             Intent.class, "service", null,
                             String.class, "resolvedType", null,
                             boolean.class, "requireForeground", false,
-                            String.class, "callingPackage", callingAppName,
+                            String.class, "callingPackage", mCallingAppPackage,
                             int.class, "userId", 0
                     ).tryMethodVariantInexact(
                             "startService",
                             "android.app.IApplicationThread", "caller", null,
                             Intent.class, "service", null,
                             String.class, "resolvedType", null,
-                            String.class, "callingPackage", callingAppName,
+                            String.class, "callingPackage", mCallingAppPackage,
                             int.class, "userId", 0
                     ).tryMethodVariantInexact( // Pre frameworks/base 99b6043
                             "startService",
@@ -111,21 +159,41 @@ class IActivityManager {
                             String.class, "resolvedType", null,
                             int.class, "userId", 0
                     );
-            mStopServiceMethod =
-                    new CrossVersionReflectedMethod(amClass)
-                            .tryMethodVariantInexact(
-                                    "stopService",
-                                    "android.app.IApplicationThread", "caller", null,
-                                    Intent.class, "service", null,
-                                    String.class, "resolvedType", null,
-                                    int.class, "userId", 0
-                            );
-            mGetIntentSenderMethod =
-                    new CrossVersionReflectedMethod(amClass)
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return mStartServiceMethod;
+    }
+
+    private CrossVersionReflectedMethod getStopServiceMethod() {
+        if (mStopServiceMethod != null) return mStopServiceMethod;
+
+        try {
+            mStopServiceMethod = new CrossVersionReflectedMethod(mAm.getClass())
+                    .tryMethodVariantInexact(
+                            "stopService",
+                            "android.app.IApplicationThread", "caller", null,
+                            Intent.class, "service", null,
+                            String.class, "resolvedType", null,
+                            int.class, "userId", 0
+                    );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return mStopServiceMethod;
+    }
+
+    private CrossVersionReflectedMethod getGetIntentSenderMethod() {
+        if (mGetIntentSenderMethod != null) return mGetIntentSenderMethod;
+
+        try {
+            mGetIntentSenderMethod = new CrossVersionReflectedMethod(mAm.getClass())
                     .tryMethodVariantInexact(
                             "getIntentSender",
                             int.class, "type", 0,
-                            String.class, "packageName", callingAppName,
+                            String.class, "packageName", mCallingAppPackage,
                             IBinder.class, "token", null,
                             String.class, "resultWho", null,
                             int.class, "requestCode", 0,
@@ -135,8 +203,19 @@ class IActivityManager {
                             Bundle.class, "options", null,
                             int.class, "userId", 0
                     );
-            mIntentSenderSendMethod =
-                    new CrossVersionReflectedMethod(Class.forName("android.content.IIntentSender"))
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return mGetIntentSenderMethod;
+    }
+
+    private CrossVersionReflectedMethod getIntentSenderSendMethod() {
+        if (mIntentSenderSendMethod != null) return mIntentSenderSendMethod;
+
+        try {
+            mIntentSenderSendMethod = new CrossVersionReflectedMethod(
+                    Class.forName("android.content.IIntentSender"))
                     .tryMethodVariantInexact(
                             "send",
                             int.class, "code", 0,
@@ -154,15 +233,17 @@ class IActivityManager {
                             "android.content.IIntentReceiver", "finishedReceiver", null,
                             String.class, "requiredPermission", null
                     );
-
-
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
+        return mIntentSenderSendMethod;
     }
 
+
+
     int startActivityAsUser(Intent intent, String resolvedType, int flags, Bundle options, int userId) throws InvocationTargetException {
-        return (Integer) mStartActivity.invoke(
+        return (Integer) getStartActivityAsUserMethod().invoke(
                 mAm,
                 "intent", intent,
                 "resolvedType", resolvedType,
@@ -172,9 +253,10 @@ class IActivityManager {
         );
     }
 
-    void broadcastIntent(Intent intent, IIntentReceiver resultTo, String[] requiredPermissions, boolean serialized, boolean sticky, int userId) throws InvocationTargetException {
+    void broadcastIntent(Intent intent, IIntentReceiver resultTo, String[] requiredPermissions,
+                         boolean serialized, boolean sticky, int userId) throws InvocationTargetException {
         /*
-        mBroadcastIntent.invoke(
+        getBroadcastIntentMethod().invoke(
                 mAm,
                 "intent", intent,
                 "resultTo", resultTo,
@@ -184,14 +266,14 @@ class IActivityManager {
                 "userId", userId
         );
         */
-        Object pendingIntent = mGetIntentSenderMethod.invoke(
+        Object pendingIntent = getGetIntentSenderMethod().invoke(
                 mAm,
                 "type", 1 /*ActivityManager.INTENT_SENDER_BROADCAST*/,
                 "intents", new Intent[] { intent },
                 "flags", PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_ONE_SHOT,
                 "userId", userId
         );
-        mIntentSenderSendMethod.invoke(
+        getIntentSenderSendMethod().invoke(
                 pendingIntent,
                 "requiredPermission", (requiredPermissions == null || requiredPermissions.length == 0) ? null : requiredPermissions[0],
                 "finishedReceiver", resultTo
@@ -199,7 +281,7 @@ class IActivityManager {
     }
 
     String getProviderMimeType(Uri uri, int userId) throws InvocationTargetException {
-        return (String) mGetProviderMimeType.invoke(
+        return (String) getGetProviderMimeTypeMethod().invoke(
                 mAm,
                 "uri", uri,
                 "userId", userId
@@ -207,7 +289,7 @@ class IActivityManager {
     }
 
     ComponentName startService(Intent service, String resolvedType, int userId) throws InvocationTargetException {
-        return (ComponentName) mStartServiceMethod.invoke(
+        return (ComponentName) getStartServiceMethod().invoke(
                 mAm,
                 "service", service,
                 "resolvedType", resolvedType,
@@ -216,7 +298,7 @@ class IActivityManager {
     }
 
     int stopService(Intent service, String resolvedType, int userId) throws InvocationTargetException {
-        return (Integer) mStopServiceMethod.invoke(
+        return (Integer) getStopServiceMethod().invoke(
                 mAm,
                 "service", service,
                 "resolvedType", resolvedType,
