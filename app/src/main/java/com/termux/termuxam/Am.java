@@ -385,11 +385,11 @@ public class Am extends BaseCommand {
             throw new AndroidException("Can't connect to package manager; is the system running?");
         }*/
 
-        if (op.equals("start")) {
+        if (op.equals("start") || op.equals("start-activity")) {
             return runStart();
-        } else if (op.equals("startservice")) {
+        } else if (op.equals("startservice") || op.equals("start-service")) {
             return runStartService();
-        } else if (op.equals("stopservice")) {
+        } else if (op.equals("stopservice") || op.equals("stop-service")) {
             return runStopService();
         /*
         } else if (op.equals("force-stop")) {
