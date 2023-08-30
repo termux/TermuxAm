@@ -6,6 +6,7 @@ import android.content.ComponentName;
 import android.content.IIntentReceiver;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 
@@ -243,6 +244,9 @@ class IActivityManager {
 
 
     int startActivityAsUser(Intent intent, String resolvedType, int flags, Bundle options, int userId) throws InvocationTargetException {
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.S || Build.VERSION.SDK_INT == Build.VERSION_CODES.S_V2)
+            Workarounds.apply(true, false, false);
+
         return (Integer) getStartActivityAsUserMethod().invoke(
                 mAm,
                 "intent", intent,
