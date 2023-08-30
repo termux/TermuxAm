@@ -89,8 +89,10 @@ public class Am extends BaseCommand {
     public void onShowUsage(PrintStream out) {
         PrintWriter pw = new PrintWriter(out);
         pw.println(
-                "usage: am [subcommand] [options]\n" +
-                "usage: am start [-D] [-N] [-W] [-P <FILE>] [--start-profiler <FILE>]\n" +
+                "Activity manager (activity) commands provided by the " + FakeContext.PACKAGE_NAME + " app.\n" +
+                "These are similar to commands provided by the Android platform with the /system/bin/am command.\n\n" +
+                "Usage: am [subcommand] [options]\n" +
+                "       am start [-D] [-N] [-W] [-P <FILE>] [--start-profiler <FILE>]\n" +
                 "               [--sampling INTERVAL] [-R COUNT] [-S]\n" +
                 "               [--track-allocation] [--user <USER_ID> | current]\n" +
                 "               [--check-draw-over-apps-permission] <INTENT>\n" +
@@ -155,6 +157,9 @@ public class Am extends BaseCommand {
                 "               [HIDDEN|RUNNING_MODERATE|BACKGROUND|RUNNING_LOW|MODERATE|RUNNING_CRITICAL|COMPLETE]\n" +
                 "       am get-current-user\n" +
                 */
+                "\n" +
+                "am: Options are:\n" +
+                "    -h | --help: Show help" +
                 "\n" +
                 "am start: start an Activity.  Options are:\n" +
                 "    -D: enable debugging\n" +
@@ -362,6 +367,11 @@ public class Am extends BaseCommand {
 
     @Override
     public Integer onRun() throws Exception {
+        String op = nextArgRequired();
+        if (op.equals("-h") || op.equals("--help")) {
+            onShowUsage(System.out);
+            return 0;
+        }
 
         mAm = new IActivityManager();
         if (mAm == null) {
@@ -374,8 +384,6 @@ public class Am extends BaseCommand {
             System.err.println(NO_SYSTEM_ERROR_CODE);
             throw new AndroidException("Can't connect to package manager; is the system running?");
         }*/
-
-        String op = nextArgRequired();
 
         if (op.equals("start")) {
             return runStart();
