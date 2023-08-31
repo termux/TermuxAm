@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/sh
-
+TERMUX_AM_VERSION=0.4
 AM_APK_PATH="@TERMUX_PREFIX@/libexec/termux-am/am.apk"
 
 is_int() {
@@ -8,6 +8,11 @@ is_int() {
         *) return 0;;
     esac
 }
+
+if [ "$1" = "--version" ]; then
+    echo "$TERMUX_AM_VERSION"
+    exit 0
+fi
 
 # If sdk version is not exported by app, then get value with getprop instead.
 if ! is_int "$ANDROID__BUILD_VERSION_SDK"; then
