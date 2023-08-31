@@ -86,9 +86,15 @@ public class IActivityManagerTest {
 
         for (Field field : IActivityManager.class.getDeclaredFields()) {
             if (field.getType() == CrossVersionReflectedMethod.class) {
+
+                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU &&
+                        field.getName().equals("mGetProviderMimeTypeMethod")) {
+                    continue;
+                }
+
                 field.setAccessible(true);
                 CrossVersionReflectedMethod method = (CrossVersionReflectedMethod) field.get(mAm);
-                assertTrue(field.getName(), method.isFound());
+                assertTrue(field.getName(), method != null && method.isFound());
             }
         }
     }

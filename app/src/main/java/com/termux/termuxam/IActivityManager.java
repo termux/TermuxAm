@@ -285,11 +285,45 @@ class IActivityManager {
     }
 
     String getProviderMimeType(Uri uri, int userId) throws InvocationTargetException {
-        return (String) getGetProviderMimeTypeMethod().invoke(
-                mAm,
-                "uri", uri,
-                "userId", userId
-        );
+        if (!"content".equals(uri.getScheme())) return null;
+
+        // The `IActivityManager.getProviderMimeType()` method has been removed in Android `>= 14` and
+        // replaced by `getMimeTypeFilterAsync()` (previously `getProviderMimeTypeAsync()`, which
+        // is an async method that requires a `RemoteCallback` instance to be passed.
+        // `ActivityManagerShellCommand` also now instead uses `Intent.resolveType()` to get
+        // mime type, which uses `ContentResolver.getType()` internally and that requires a `Context`.
+        // The `ContentResolver.getType()` internally calls `IActivityManager.getProviderMimeType()`,
+        // if failed to get an existing `IContentProvider` with `ActivityThread`, which then calls
+        // `ContentProviderHelper.getProviderMimeTypeAsync()`, however calling it or
+        // `getProviderMimeType()` just seems to always return `null` and not call target provider
+        // for some reason. The `IContentProvider.getTypeAsync()` should call the target provider,
+        // but to actually get the `IContentProvider` with `IActivityManager.getContentProvider()`
+        // requires passing an `IApplicationThread` that belongs to an app process since
+        // `ContentProviderHelper.getContentProviderImpl()` uses that to get the relevant
+        // `ProcessRecord`, and ir will otherwise throw `Unable to find app for caller` error.
+        // But since we are not running in an app we don't have a valid `IApplicationThread`,
+        // even if we get it from `ActivityThread.mAppThread` we create.
+        // `ActivityThread.acquireExistingProvider()` method used by `ContextImpl`, it is not used.
+        // - https://cs.android.com/android/platform/superproject/+/android-13.0.0_r74:frameworks/base/core/java/android/app/IActivityManager.aidl;l=339
+        // - https://cs.android.com/android/platform/superproject/+/android-13.0.0_r74:frameworks/base/services/core/java/com/android/server/am/ActivityManagerShellCommand.java;l=497
+        // - https://cs.android.com/android/platform/superproject/+/android-13.0.0_r74:frameworks/base/core/java/android/content/ContentResolver.java;l=906
+        // - https://cs.android.com/android/platform/superproject/+/android-13.0.0_r74:frameworks/base/core/java/android/content/Intent.java;l=8563
+        // - https://cs.android.com/android/platform/superproject/+/android-13.0.0_r74:frameworks/base/services/core/java/com/android/server/am/ContentProviderHelper.java;l=1030
+        // - https://cs.android.com/android/platform/superproject/+/android-13.0.0_r74:frameworks/base/core/java/android/app/ActivityThread.java;l=7187
+        // - https://cs.android.com/android/platform/superproject/+/android-13.0.0_r74:frameworks/base/core/java/android/app/ContextImpl.java;l=3222
+        // - https://cs.android.com/android/platform/superproject/+/android-13.0.0_r74:frameworks/base/services/core/java/com/android/server/am/ContentProviderHelper.java;l=178
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.TIRAMISU) {
+            CrossVersionReflectedMethod method = getGetProviderMimeTypeMethod();
+            if (method.isFound()) {
+                return (String) getGetProviderMimeTypeMethod().invoke(
+                        mAm,
+                        "uri", uri,
+                        "userId", userId
+                );
+            }
+        }
+
+        return null;
     }
 
     ComponentName startService(Intent service, String resolvedType, int userId) throws InvocationTargetException {
