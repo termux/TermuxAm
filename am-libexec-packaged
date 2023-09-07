@@ -42,7 +42,8 @@ if [ "$ANDROID__BUILD_VERSION_SDK" -ge 34 ] && [ "$1" = "broadcast" ]; then
     # - https://github.com/termux/termux-packages/discussions/8292#discussioncomment-5102555
     output="$(/system/bin/am broadcast --user "$TERMUX__USER_ID" "$@" 2>&1 </dev/null)"
     exit_code=$?
-    echo "$output"
+    # Do not log `echo: I/0 error` if stdout is closed
+    echo "$output" 2>/dev/null
     exit $exit_code
 fi
 
