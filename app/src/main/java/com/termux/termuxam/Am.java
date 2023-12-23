@@ -476,18 +476,17 @@ public class Am extends BaseCommand {
     }
 
     int parseUserArg(String arg) {
-        return 0;
-        /*
         int userId;
         if ("all".equals(arg)) {
-            userId = UserHandle.USER_ALL;
+            //userId = UserHandle.USER_ALL;
+            userId = -1;
         } else if ("current".equals(arg) || "cur".equals(arg)) {
-            userId = UserHandle.USER_CURRENT;
+            //userId = UserHandle.USER_CURRENT;
+            userId = -2;
         } else {
             userId = Integer.parseInt(arg);
         }
         return userId;
-        */
     }
 
     private Intent makeIntent() throws URISyntaxException {
