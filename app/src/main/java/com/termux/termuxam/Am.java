@@ -161,7 +161,8 @@ public class Am extends BaseCommand {
                 "am: Options are:\n" +
                 "    -h | --help: Show help" +
                 "\n" +
-                "am start: start an Activity.  Options are:\n" +
+                "am start|start-activity: start an Activity.\n" +
+                "Options are:\n" +
                 "    -D: enable debugging\n" +
                 "    -N: enable native debugging\n" +
                 "    -W: wait for launch to complete\n" +
@@ -186,7 +187,8 @@ public class Am extends BaseCommand {
                 // - https://cs.android.com/android/_/android/platform/frameworks/base/+/7b97a0267b61485e808da6b1edf904ae653c2541
                 // - https://cs.android.com/android/_/android/platform/frameworks/base/+/d016285dd1a368f7eec532fb82c01dcee0c4bcf1
                 "\n" +
-                "am startservice: start a Service.  Options are:\n" +
+                "am startservice|start-service: start a Service.\n" +
+                "Options are:\n" +
                 "    --user <USER_ID> | current: Specify which user to run as; if not\n" +
                 "        specified then run as the current user.\n" +
                 "    --check-draw-over-apps-permission: Check if calling package has\n" +
@@ -196,7 +198,8 @@ public class Am extends BaseCommand {
                 // - https://cs.android.com/android/_/android/platform/frameworks/base/+/20f42909f8186639bcc9dba77791171e3966be88
                 // - https://cs.android.com/android/_/android/platform/frameworks/base/+/6706c1acc0eb1e8b30721940fe39b572edc225c2
                 "\n" +
-                "am stopservice: stop a Service.  Options are:\n" +
+                "am stopservice|stop-service: stop a Service.\n" +
+                "Options are:\n" +
                 "    --user <USER_ID> | current: Specify which user to run as; if not\n" +
                 "        specified then run as the current user.\n" +
                 "\n" +
