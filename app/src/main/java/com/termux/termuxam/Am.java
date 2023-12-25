@@ -494,7 +494,7 @@ public class Am extends BaseCommand {
     }
 
     private Intent makeIntent() throws URISyntaxException {
-        int defUser = 0;
+        int defUser = -2; // UserHandle.USER_CURRENT
         mStartFlags = 0;
         mWaitOption = false;
         mStopOption = false;
