@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/sh
-TERMUX_AM_VERSION=0.7.0
+TERMUX_AM_VERSION=0.7.1
 AM_APK_PATH="@TERMUX_PREFIX@/libexec/termux-am/am.apk"
 
 if [ "$1" = "--version" ]; then
