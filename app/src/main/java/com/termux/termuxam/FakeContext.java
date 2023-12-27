@@ -33,8 +33,12 @@ public class FakeContext extends MutableContextWrapper {
 
     @SuppressWarnings("ConstantConditions")
     private static String setPackageName() {
-        return TERMUX_PACKAGES_BUILD_PACKAGE_NAME.startsWith("@") ?
-                BuildConfig.TERMUX_PACKAGE_NAME : TERMUX_PACKAGES_BUILD_PACKAGE_NAME;
+        if (Process.myUid() == 2000) {
+            return "com.android.shell";
+        } else {
+            return TERMUX_PACKAGES_BUILD_PACKAGE_NAME.startsWith("@") ?
+                    BuildConfig.TERMUX_PACKAGE_NAME : TERMUX_PACKAGES_BUILD_PACKAGE_NAME;
+        }
     }
 
     @Override
