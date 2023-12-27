@@ -33,6 +33,8 @@ dependencies {
     androidTestImplementation "androidx.test:runner:1.5.2"
     androidTestImplementation "androidx.test.ext:junit:1.1.5"
 
+    implementation "androidx.annotation:annotation:1.7.1"
+
     // https://github.com/LSPosed/AndroidHiddenApiBypass | https://mvnrepository.com/artifact/org.lsposed.hiddenapibypass/hiddenapibypass
     implementation "org.lsposed.hiddenapibypass:hiddenapibypass:4.3"
 }

@@ -18,17 +18,23 @@
 
 package com.termux.termuxam;
 
+import android.annotation.SuppressLint;
 import android.app.ActivityOptions;
 import android.content.ComponentName;
 import android.content.IIntentReceiver;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Process;
 import android.os.SystemClock;
 import android.util.AndroidException;
 
+import com.termux.termuxam.logger.Logger;
+import com.termux.termuxam.reflection.ReflectionUtils;
+
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 
 public class Am extends BaseCommand {
@@ -48,6 +54,42 @@ public class Am extends BaseCommand {
     private static final int STACK_BOUNDS_INSET = 10;
     */
 
+    /**
+     * Range of uids allocated for a user.
+     *
+     * This is the same as `AID_USER_OFFSET` defined in `android_filesystem_config.h`.
+     *
+     * - https://cs.android.com/android/platform/superproject/+/android-13.0.0_r18:frameworks/base/core/java/android/os/UserHandle.java;l=42
+     * - https://cs.android.com/android/platform/superproject/+/android-5.0.0_r1.0.1:frameworks/base/core/java/android/os/UserHandle.java;l=29
+     * - https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:system/core/libcutils/include/private/android_filesystem_config.h;l=214
+     * - https://cs.android.com/android/platform/superproject/+/android-13.0.0_r18:system/core/libcutils/multiuser.cpp
+     */
+    public static final int PER_USER_RANGE = 100000;
+
+    /**
+     * Defines the start of a range of UIDs (and GIDs), going from this
+     * number to {@link #LAST_APPLICATION_UID} that are reserved for assigning
+     * to applications.
+     */
+    public static final int FIRST_APPLICATION_UID = 10000;
+
+    /**
+     * Last of application-specific UIDs starting at
+     * {@link #FIRST_APPLICATION_UID}.
+     */
+    public static final int LAST_APPLICATION_UID = 19999;
+
+    /** A user id to indicate all users on the device. */
+    public static final int USER_ALL = -1;
+
+    /** A user id to indicate the currently active user. */
+    public static final int USER_CURRENT = -2;
+
+    /** An undefined user id. */
+    public static final int USER_NULL = -10000;
+
+
+
     private IActivityManager mAm;
     /*
     private IPackageManager mPm;
@@ -58,7 +100,7 @@ public class Am extends BaseCommand {
     private boolean mStopOption = false;
 
     private int mRepeat = 0;
-    private int mUserId;
+    private Integer mUserId;
     private String mReceiverPermission;
     private boolean mCheckDrawOverAppsPermissions = false;
 
@@ -155,8 +197,8 @@ public class Am extends BaseCommand {
                 "       am get-inactive [--user <USER_ID>] <PACKAGE>\n" +
                 "       am send-trim-memory [--user <USER_ID>] <PROCESS>\n" +
                 "               [HIDDEN|RUNNING_MODERATE|BACKGROUND|RUNNING_LOW|MODERATE|RUNNING_CRITICAL|COMPLETE]\n" +
-                "       am get-current-user\n" +
                 */
+                "       am get-current-user\n" +
                 "\n" +
                 "am: Options are:\n" +
                 "    -h | --help: Show help" +
@@ -291,7 +333,7 @@ public class Am extends BaseCommand {
                 "am to-intent-uri: print the given Intent specification as an intent: URI.\n" +
                 "\n" +
                 "am to-app-uri: print the given Intent specification as an android-app: URI.\n" +
-                "\n" //+
+                "\n" +
                 /*
                 "am switch-user: switch to put USER_ID in the foreground, starting\n" +
                 "  execution of that user if it is currently stopped.\n" +
@@ -361,9 +403,11 @@ public class Am extends BaseCommand {
                 "\n" +
                 "am send-trim-memory: send a memory trim event to a <PROCESS>.\n" +
                 "\n" +
-                "am get-current-user: returns id of the current foreground user.\n" +
+                 */
+                "am get-current-user: returns user id for the current process if it is owned \n" +
+                "  by an app, otherwise current foreground user if it is owned by\n" +
+                "  a privileged user like root or shell.\n" +
                 "\n"
-                */
         );
         IntentCmd.printIntentArgsHelp(pw, "");
         pw.flush();
@@ -470,23 +514,89 @@ public class Am extends BaseCommand {
             runGetInactive();
         } else if (op.equals("send-trim-memory")) {
             runSendTrimMemory();
+         */
         } else if (op.equals("get-current-user")) {
-            runGetCurrentUser();
-        */
+            return runGetCurrentUser();
         } else {
             showError("Error: unknown command '" + op + "'");
             return 1;
         }
     }
 
+
+
+    /** Returns the user id for a given uid. */
+    public static int getUserId(int uid) {
+        return uid / PER_USER_RANGE;
+    }
+
+    /**
+     * Get the user id for the current foreground user.
+     *
+     * This requires `android.permission.INTERACT_ACROSS_USERS` or `android.permission.INTERACT_ACROSS_USERS_FULL`,
+     * so should be only called if process is running as privileged user like root (`0`) or shell (`2000`)
+     * user, etc or if the app has been granted the permission.
+     *
+     * - https://cs.android.com/android/platform/superproject/+/android-14.0.0_r1:frameworks/base/core/java/android/app/ActivityManager.java;l=4752
+     * - https://cs.android.com/android/platform/superproject/+/android-14.0.0_r1:frameworks/base/services/core/java/com/android/server/am/ActivityManagerService.java;l=17146
+     * - https://cs.android.com/android/platform/superproject/+/android-14.0.0_r1:frameworks/base/services/core/java/com/android/server/am/UserController.java;l=2721
+     * - https://cs.android.com/android/platform/superproject/+/android-14.0.0_r1:frameworks/base/services/core/java/com/android/server/am/UserController.java;l=1695
+     *
+     * @return Returns the user id.
+     */
+    public static int getCurrentUserId() {
+        ReflectionUtils.bypassHiddenAPIReflectionRestrictions();
+
+        String className = "android.app.ActivityManager";
+        String methodName = "getCurrentUser";
+        try {
+            @SuppressLint("PrivateApi") Class<?> clazz = Class.forName(className);
+            Method method = ReflectionUtils.getDeclaredMethod(clazz, methodName);
+            if (method == null) {
+                return USER_NULL;
+            }
+
+            Integer userId = (Integer) ReflectionUtils.invokeMethod(method, null).value;
+            return userId != null && userId >= 0 ? userId : USER_NULL;
+        } catch (Exception e) {
+            Logger.logStackTraceWithMessage("Error: Failed to call " + methodName + "() method of " + className + " class", e);
+            return USER_NULL;
+        }
+    }
+
     int parseUserArg(String arg) {
+        return parseUserArg(arg, false);
+    }
+
+    int parseUserArg(String arg, boolean getActualUser) {
         int userId;
         if ("all".equals(arg)) {
             //userId = UserHandle.USER_ALL;
-            userId = -1;
+            userId = USER_ALL;
         } else if ("current".equals(arg) || "cur".equals(arg)) {
             //userId = UserHandle.USER_CURRENT;
-            userId = -2;
+
+            // We cannot USER_CURRENT (`-2`) for intent commands as it may result in following exception
+            // on some devices if running as a normal app user without required permissions.
+            // `java.lang.SecurityException: Permission Denial: <method> asks to run as user -2 but
+            // is calling from uid <uid>; this requires android.permission.INTERACT_ACROSS_USERS_FULL
+            // or android.permission.INTERACT_ACROSS_USERS`
+            // - https://github.com/termux/TermuxAm/issues/11
+            // Instead, if current process is owned by an app, we return user id for the current process.
+            // However, if current process is running as a privileged user like root (`0`) or
+            // shell (`2000`) user, `getUserId()` will always return `0`, which will be wrong if
+            // running in a secondary user like `10`.
+            // So if current process is not owned by an app, and we need the actual user, like for
+            // `get-current-user` command, then we use reflection via `getCurrentUserId()` to get
+            // the actual user id from a SystemApi, otherwise for intent commands, we return
+            // `USER_CURRENT`, as privileged users should have the `INTERACT_ACROSS_USERS*` permission
+            // and we let framework to get the actual user itself instead of using reflection here.
+            int uid = Process.myUid();
+            if (uid >= FIRST_APPLICATION_UID) {
+                userId = getUserId(uid);
+            } else {
+                userId = getActualUser ? getCurrentUserId() : USER_CURRENT;
+            }
         } else {
             userId = Integer.parseInt(arg);
         }
@@ -494,7 +604,6 @@ public class Am extends BaseCommand {
     }
 
     private Intent makeIntent() throws URISyntaxException {
-        int defUser = -2; // UserHandle.USER_CURRENT
         mStartFlags = 0;
         mWaitOption = false;
         mStopOption = false;
@@ -504,14 +613,14 @@ public class Am extends BaseCommand {
         mSamplingInterval = 0;
         mAutoStop = false;
         */
-        mUserId = defUser;
+        mUserId = null;
         mCheckDrawOverAppsPermissions = false;
         /*
         mStackId = INVALID_STACK_ID;
         */
 
 
-        return IntentCmd.parseCommandArgs(mArgs, new IntentCmd.CommandOptionHandler() {
+        Intent intent = IntentCmd.parseCommandArgs(mArgs, new IntentCmd.CommandOptionHandler() {
             @Override
             public boolean handleOption(String opt, ShellCommand cmd) {
                 /*if (opt.equals("-D")) {
@@ -558,16 +667,26 @@ public class Am extends BaseCommand {
                 return true;
             }
         });
+
+        // We do not get current user at start of this method in case caller knows that current process
+        // does not have required permissions to call `getCurrentUserId()` and has manually passed
+        // the user id with the `--user` argument.
+        // .
+        if (mUserId == null) {
+            mUserId = parseUserArg("current");
+        }
+
+        return intent;
     }
 
     private int runStartService() throws Exception {
         Intent intent = makeIntent();
-        /*
-        if (mUserId == UserHandle.USER_ALL) {
-            System.err.println("Error: Can't start activity with user 'all'");
-            return;
+
+        if (mUserId == null || mUserId == USER_ALL || mUserId == USER_NULL) {
+            System.err.println("Error: Can't start service with user" +
+                    " '" + (mUserId != null && mUserId == USER_ALL ? "all" : mUserId) + "'");
+            return 1;
         }
-        */
 
         if (mCheckDrawOverAppsPermissions &&
                 !PermissionUtils.validateDisplayOverOtherAppsPermissionForPostAndroid10(false, true)) {
@@ -594,12 +713,13 @@ public class Am extends BaseCommand {
 
     private int runStopService() throws Exception {
         Intent intent = makeIntent();
-        /*
-        if (mUserId == UserHandle.USER_ALL) {
-            System.err.println("Error: Can't stop activity with user 'all'");
-            return;
+
+        if (mUserId == null || mUserId == USER_ALL || mUserId == USER_NULL) {
+            System.err.println("Error: Can't stop service with user" +
+                    " '" + (mUserId != null && mUserId == USER_ALL ? "all" : mUserId) + "'");
+            return 1;
         }
-        */
+
         System.out.println("Stopping service: " + intent);
         int result = mAm.stopService(/*null,*/ intent, intent.getType(), mUserId);
         if (result == 0) {
@@ -618,12 +738,13 @@ public class Am extends BaseCommand {
 
     private int runStart() throws Exception {
         Intent intent = makeIntent();
-        /*
-        if (mUserId == UserHandle.USER_ALL) {
-            System.err.println("Error: Can't start service with user 'all'");
-            return;
+
+        if (mUserId == null || mUserId == USER_ALL || mUserId == USER_NULL) {
+            System.err.println("Error: Can't start activity with user" +
+                    " '" + (mUserId != null && mUserId == USER_ALL ? "all" : mUserId) + "'");
+            return 1;
         }
-        */
+
         String mimeType = intent.getType();
         if (mimeType == null && intent.getData() != null
                 && "content".equals(intent.getData().getScheme())) {
@@ -2633,13 +2754,21 @@ public class Am extends BaseCommand {
                                proc);
         }
     }
+    */
 
-    private void runGetCurrentUser() throws Exception {
-        UserInfo currentUser = Preconditions.checkNotNull(mAm.getCurrentUser(),
-                "Current user not set");
-        System.out.println(currentUser.id);
+    private int runGetCurrentUser() throws Exception {
+        //UserInfo currentUser = Preconditions.checkNotNull(mAm.getCurrentUser(),
+        //        "Current user not set");
+        int userId = parseUserArg("current", true);
+        if (userId == USER_NULL) {
+            return 1;
+        }
+
+        System.out.println(userId);
+        return 0;
     }
 
+    /*
     // *
     // * Open the given file for sending into the system process. This verifies
     // * with SELinux that the system will have access to the file.
