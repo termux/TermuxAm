@@ -629,20 +629,16 @@ public class Am extends BaseCommand {
                     mStartFlags |= ActivityManager.START_FLAG_NATIVE_DEBUGGING;
                 } else */if (opt.equals("-W")) {
                     mWaitOption = true;
+                /*
                 } else if (opt.equals("-P")) {
-                    /*
                     mProfileFile = nextArgRequired();
                     mAutoStop = true;
-                    */
                 } else if (opt.equals("--start-profiler")) {
-                    /*
                     mProfileFile = nextArgRequired();
                     mAutoStop = false;
-                    */
                 } else if (opt.equals("--sampling")) {
-                    /*
                     mSamplingInterval = Integer.parseInt(nextArgRequired());
-                    */
+                */
                 } else if (opt.equals("-R")) {
                     mRepeat = Integer.parseInt(nextArgRequired());
                 } else if (opt.equals("-S")) {
@@ -657,10 +653,10 @@ public class Am extends BaseCommand {
                     mReceiverPermission = nextArgRequired();
                 } else if (opt.equals("--check-draw-over-apps-permission")) {
                     mCheckDrawOverAppsPermissions = true;
+                /*
                 } else if (opt.equals("--stack")) {
-                    /*
                     mStackId = Integer.parseInt(nextArgRequired());
-                    */
+                */
                 } else {
                     return false;
                 }
