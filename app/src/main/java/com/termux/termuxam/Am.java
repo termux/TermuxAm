@@ -103,6 +103,7 @@ public class Am extends BaseCommand {
     private Integer mUserId;
     private String mReceiverPermission;
     private boolean mCheckDrawOverAppsPermissions = false;
+    private int mDisplayId;
 
     /*
     private String mProfileFile;
@@ -222,7 +223,8 @@ public class Am extends BaseCommand {
                 "        Draw over other apps permission before starting activity since" +
                 "        starting activities from background may fail on Android >= 10.\n" +
                 "        https://developer.android.com/guide/components/activities/background-starts\n" +
-                "    --stack <STACK_ID>: Specify into which stack should the activity be put." +
+                "    --stack <STACK_ID>: Specify into which stack should the activity be put.\n" +
+                "    --display <DISPLAY_ID>: The display to launch the activity into." +
                 // - https://cs.android.com/android/platform/superproject/+/android-13.0.0_r74:frameworks/base/services/core/java/com/android/server/wm/BackgroundActivityStartController.java;l=331;bpv=0
                 // - https://cs.android.com/android/_/android/platform/frameworks/base/+/8596dedf188b2a6637bc4ad89abd19643f3c6c99
                 // - https://cs.android.com/android/_/android/platform/frameworks/base/+/1548684f7bcd813a40bae45b58607b024b9f5d33
@@ -615,6 +617,7 @@ public class Am extends BaseCommand {
         */
         mUserId = null;
         mCheckDrawOverAppsPermissions = false;
+		mDisplayId = 0;
         /*
         mStackId = INVALID_STACK_ID;
         */
@@ -657,6 +660,8 @@ public class Am extends BaseCommand {
                 } else if (opt.equals("--stack")) {
                     mStackId = Integer.parseInt(nextArgRequired());
                 */
+				} else if (opt.equals("--display")) {
+                    mDisplayId = Integer.parseInt(nextArgRequired());
                 } else {
                     return false;
                 }
@@ -807,6 +812,10 @@ public class Am extends BaseCommand {
             */
             final long startTime = SystemClock.uptimeMillis();
             ActivityOptions options = null;
+            if (mDisplayId != 0) {
+				options = ActivityOptions.makeBasic();
+				options.setLaunchDisplayId(mDisplayId);
+			}
             /*
             if (mStackId != INVALID_STACK_ID) {
                 options = ActivityOptions.makeBasic();
