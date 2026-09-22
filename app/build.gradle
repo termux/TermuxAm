@@ -2,7 +2,11 @@ apply plugin: 'com.android.application'
 
 android {
     namespace "com.termux.termuxam"
-    compileSdkVersion 33
+    compileSdkVersion 35
+    buildToolsVersion "37.0.0"
+    buildFeatures {
+        buildConfig true
+    }
     defaultConfig {
         applicationId "com.termux.termuxam"
         minSdkVersion 21
